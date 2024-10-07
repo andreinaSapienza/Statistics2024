@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penetration Level Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            color: #045185;
+        }
+
+        canvas {
+            border: 1px solid #045185;
+            display: block;
+            margin: 20px auto;
+            background-color: #ffffff;
+            width: 820px;
+            height: 600px;
+        }
+
+        form {
+            margin-bottom: 20px;
+            display: block;
+            width: 100%;
+        }
+
+        label {
+            margin: 0 10px 0 0;
+            display: inline-block;
+            width: 200px;
+            text-align: right;
+        }
+
+        label + label {
+            margin-top: 15px;
+        }
+
+        input[type="number"] {
+            border: 2px solid #045185;
+            border-radius: 20px;
+            padding: 8px;
+            margin: 0 10px;
+            width: 50px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #045185;
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        #result {
+            font-size: 18px;
+            color: #045185;
+            margin-top: 20px;
+        }
+
+        .button-28 {
+            appearance: none;
+            background-color: transparent;
+            border: 2px solid #045185;
+            border-radius: 15px;
+            color: #045185;
+            cursor: pointer;
+            display: inline-block;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: normal;
+            min-height: 40px;
+            padding: 16px 24px;
+            text-align: center;
+            transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+            width: 20%;
+        }
+
+        .button-28:hover {
+            color: #fff;
+            background-color: #3182b8;
+        }
+
+        .button-28:active {
+            box-shadow: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Penetration Level Simulation</h1>
+    <form id="simulation-form">
+        <label for="numHackers">Number of Hackers:</label>
+        <input type="number" id="numHackers" name="numHackers" value="100" min="1" max="1000">
+        <label for="numServers">Number of Servers:</label>
+        <input type="number" id="numServers" name="numServers" value="150" min="1" max="1000">
+        <label for="penetrationProb">Penetration Probability:</label>
+        <input type="number" step="0.01" id="penetrationProb" name="penetrationProb" value="0.3" min="0" max="1"><br><br>
+        <button class="button-28" role="button">Start Simulation</button>
+    </form>
+
+    <canvas id="canvas"></canvas>
+    <canvas id="histogramCanvas" width="800" height="600"></canvas>
+    <div id="result"></div>
+
+    <script>
+        let m = 100; // Number of hackers
+        let n = 150; // Number of servers
+        let p = 0.3; // Penetration probability
+
+        const canvasWidth = 820;
+        const canvasHeight = 600;
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
+        // Funzione che simula l'attacco
+        function attemptPenetration(prob) {
+            return Math.random() < prob ? 1 : 0; // Restituisce 1 se l'attacco ha successo, altrimenti 0
+        }
+
+        // Function to draw grid
+        function drawGrid() {
+            ctx.strokeStyle = '#d3d3d3';
+            ctx.lineWidth = 0.5;
+            const xStep = (canvasWidth - 100) / n;
+            const yStep = (canvasHeight - 100) / m;
+
+            for (let i = 0; i <= n; i++) {
+                const x = 50 + i * xStep;
+                ctx.beginPath();
+                ctx.moveTo(x, 50);
+                ctx.lineTo(x, canvasHeight - 50);
+                ctx.stroke();
+            }
+
+            for (let i = 0; i <= m; i++) {
+                const y = canvasHeight - 50 - i * yStep;
+                ctx.beginPath();
+                ctx.moveTo(50, y);
+                ctx.lineTo(canvasWidth - 50, y);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = '#045185';
+            ctx.font = '16px Poppins';
+            ctx.fillText('Number of Servers', canvasWidth / 2 - 30, canvasHeight - 10);
+            ctx.save();
+            ctx.translate(10, canvasHeight / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Penetration Level', 0, 0);
+            ctx.restore();
+
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(50, canvasHeight - 50);
+            ctx.lineTo(canvasWidth - 50, canvasHeight - 50);
+            ctx.moveTo(50, 50);
+            ctx.lineTo(50, canvasHeight - 50);
+            ctx.stroke();
+
+            for (let i = 0; i <= n; i += 10) {
+                const x = 50 + i * xStep;
+                ctx.fillText(i, x - 5, canvasHeight - 30);
+            }
+
+            for (let i = 0; i <= m; i += 10) {
+                const y = canvasHeight - 50 - i * yStep;
+                ctx.fillText(i, 20, y + 5);
+            }
+        }
+
+        // Function to draw the path for each hacker
+        function drawHackerPath(hackerAttempts, index) {
+            const xStep = (canvasWidth - 100) / n;
+            let x = 50;
+            let y = canvasHeight - 50;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineWidth = 3;
+
+            const hackerColor = `hsl(${(index * 360) / m}, 100%, 50%)`;
+            ctx.strokeStyle = hackerColor;
+
+            hackerAttempts.forEach((jump) => {
+                x += xStep;
+                ctx.lineTo(x, y);
+
+                if (jump === 1) {
+                    y -= (canvasHeight - 100) / m;
+                    ctx.lineTo(x, y);
+                }
+            });
+
+            ctx.stroke();
+        }
+
+        function simulateHackerAttack(m, n, p) {
+            const allHackerAttempts = [];
+            let avgPenetration = 0; // Variabile per memorizzare la media
+            let penetrationCounts = []; 
+
+            for (let i = 0; i < m; i++) {
+                let hackerAttempts = [];
+                let totalPenetrations = 0; // Inizializzare a zero il conteggio degli attacchi con successo per ogni hacker
+
+                for (let j = 0; j < n; j++) {
+                    const penetrationResult = attemptPenetration(p);
+                    hackerAttempts.push(penetrationResult);
+                    totalPenetrations += penetrationResult; // Aggiorna conteggio di attacchi riusciti per ogni hacker
+                }
+
+                allHackerAttempts.push(hackerAttempts);
+
+                // Applicare formula della media ricorsiva
+                avgPenetration = avgPenetration + (totalPenetrations - avgPenetration) / (i + 1);
+
+                penetrationCounts.push(totalPenetrations);
+            }
+
+            return {
+                allHackerAttempts: allHackerAttempts,
+                avgPenetration: avgPenetration,
+                penetrationCounts: penetrationCounts
+            };
+        }
+
+        function drawHistogram(allHackerAttempts) {
+            const histogramCanvas = document.getElementById('histogramCanvas');
+            const ctxHist = histogramCanvas.getContext('2d');
+            const levelCounts = new Array(n + 1).fill(0);
+
+            // Contare numero di hacker per ogni livello di penetrazione
+            allHackerAttempts.forEach(attempts => {
+                const level = attempts.reduce((sum, current) => sum + current, 0);
+                levelCounts[level]++;
+            });
+
+            // Clear the histogram canvas
+            ctxHist.fillStyle = 'white';
+            ctxHist.fillRect(0, 0, histogramCanvas.width, histogramCanvas.height);
+
+            // Draw the histogram
+            const barWidth = (histogramCanvas.width - 100) / levelCounts.length;
+            const maxCount = Math.max(...levelCounts);
+
+            ctxHist.fillStyle = '#045185'; // Set color for histogram bars
+            for (let i = 0; i < levelCounts.length; i++) {
+                const barHeight = (levelCounts[i] / maxCount) * (histogramCanvas.height - 100);
+                ctxHist.fillRect(50 + i * barWidth, histogramCanvas.height - 50 - barHeight, barWidth - 2, barHeight);
+            }
+
+            // Draw axes
+            ctxHist.strokeStyle = '#000000';
+            ctxHist.beginPath();
+            ctxHist.moveTo(50, histogramCanvas.height - 50); // X-axis
+            ctxHist.lineTo(histogramCanvas.width - 50, histogramCanvas.height - 50); // Draw X-axis
+            ctxHist.moveTo(50, 50); // Y-axis
+            ctxHist.lineTo(50, histogramCanvas.height - 50); // Draw Y-axis
+            ctxHist.stroke();
+
+            // Add labels
+            ctxHist.fillStyle = '#045185';
+            ctxHist.font = '16px Poppins';
+            ctxHist.fillText('Number of Servers Hacked', histogramCanvas.width / 2 - 100, histogramCanvas.height - 10);
+            ctxHist.fillText('Number of Hackers', 10, 20); // Y-axis label
+
+            // Add Y-axis numbers
+            const yStep = (histogramCanvas.height - 100) / maxCount; // Calculate step for Y-axis numbers
+            for (let i = 0; i <= maxCount; i++) {
+                const y = histogramCanvas.height - 50 - i * yStep;
+                ctxHist.fillText(i, 25, y + 5); // Adjust position as needed
+            }
+
+            // Draw grid
+            ctxHist.strokeStyle = '#d3d3d3'; // Light gray for grid
+            ctxHist.lineWidth = 0.5; // Thin grid lines
+
+            // Add X-axis numbers
+            for (let i = 0; i < levelCounts.length; i += 10) {
+                const x = 50 + i * barWidth + (barWidth - 2) / 2; // Center the number below the bar
+                ctxHist.fillText(i, x, histogramCanvas.height - 30); // Adjust vertical position as needed
+            }
+
+            // Draw vertical grid lines
+            for (let i = 0; i <= levelCounts.length; i++) {
+                const x = 50 + i * barWidth;
+                ctxHist.beginPath();
+                ctxHist.moveTo(x, 50);
+                ctxHist.lineTo(x, histogramCanvas.height - 50);
+                ctxHist.stroke();
+            }
+
+            // Draw horizontal grid lines
+            for (let i = 0; i <= maxCount; i++) {
+                const y = histogramCanvas.height - 50 - i * yStep;
+                ctxHist.beginPath();
+                ctxHist.moveTo(50, y);
+                ctxHist.lineTo(histogramCanvas.width - 50, y);
+                ctxHist.stroke();
+            }
+        }
+
+        // Evento handler per form
+        document.getElementById('simulation-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+            m = parseInt(document.getElementById('numHackers').value);
+            n = parseInt(document.getElementById('numServers').value);
+            p = parseFloat(document.getElementById('penetrationProb').value);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous drawing
+            drawGrid(); // Draw the grid
+
+            const simulationResult = simulateHackerAttack(m, n, p);
+            const allHackerAttempts = simulationResult.allHackerAttempts;
+            const avgPenetration = simulationResult.avgPenetration;
+
+            allHackerAttempts.forEach((attempts, index) => drawHackerPath(attempts, index));
+
+            drawHistogram(allHackerAttempts); // Draw histogram
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = ` Average Penetration: ${avgPenetration.toFixed(2)}`;
+        });
+    </script>
+</body>
+
+</html>

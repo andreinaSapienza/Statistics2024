@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grafici con Chart.js</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            color: #045185;
+        }
+
+        canvas {
+            border: 1px solid #045185;
+            display: block;
+            margin: 20px auto;
+            background-color: #ffffff;
+            width: 820px;
+            height: 600px;
+        }
+
+        form {
+            margin-bottom: 20px;
+            display: block;
+            width: 100%;
+        }
+
+        label {
+            margin: 0 10px 0 0;
+            display: inline-block;
+            width: 200px;
+            text-align: right;
+        }
+
+        label+label {
+            margin-top: 15px;
+        }
+
+        input[type="number"] {
+            border: 2px solid #045185;
+            border-radius: 20px;
+            padding: 8px;
+            margin: 0 10px;
+            width: 50px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #045185;
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        #result {
+            font-size: 18px;
+            color: #045185;
+            margin-top: 20px;
+        }
+
+        .button-28 {
+            appearance: none;
+            background-color: transparent;
+            border: 2px solid #045185;
+            border-radius: 15px;
+            color: #045185;
+            cursor: pointer;
+            display: inline-block;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: normal;
+            min-height: 40px;
+            padding: 16px 24px;
+            text-align: center;
+            transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+            width: 20%;
+        }
+
+        .button-28:hover {
+            color: #fff;
+            background-color: #3182b8;
+        }
+
+        .button-28:active {
+            box-shadow: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Random Walk Simulation</h1>
+    <form id="valuesForm">
+        <label for="integer1">Number of servers(n): </label>
+        <input type="number" id="integer1" value="100" required>
+
+        <label for="integer2">Number of Hackers(m): </label>
+        <input type="number" id="integer2" value="50" required>
+
+        <label for="decimal">Penetration Probability(P): </label>
+        <input type="number" id="decimal" value="0.5" step="0.01" min="0" max="1" required>
+
+        <label for="integer3">Specific Time Step: </label>
+        <input type="number" id="integer3" value="50" required>
+        <br><br>
+        <button type="submit" class="button-28">Start Simulation</button>
+    </form>
+
+    <div id="chartContainer">
+        <div style="flex: 1; padding: 10px;">
+            <canvas id="myChart" height="400"></canvas>
+        </div>
+        <div style="flex: 1; padding: 10px;">
+            <canvas id="mySecondChart" height="400"></canvas>
+        </div>
+        <div style="flex: 1; padding: 10px;">
+            <canvas id="myIntermediateChart" height="400"></canvas>
+        </div>
+        <div style="flex: 1; padding: 10px;">
+            <canvas id="myFourthChart" height="400"></canvas>
+        </div>
+    </div>
+    <div id="resultContainer">
+        <p id="resultMean">Mean: </p>
+        <p id="resultVariance">Variance: </p>
+    </div>
+
+
+
+    <script>
+        let myChart = null;
+        let mySecondChart = null;
+        let myIntermediateChart = null;
+        let myFourthChart = null;
+
+        function createChart(servers, attackerDatasets) {
+            if (myChart !== null) {
+                myChart.destroy();
+            }
+
+            const ctx = document.getElementById('myChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: servers,
+                    datasets: attackerDatasets
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            enabled: false,
+                        },
+                        legend: {
+                            display: false,
+                            labels: {
+                                color: '#045185'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                color: '#d3d3d3'
+                            },
+                            ticks: {
+                                color: '#d3d3d3'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                color: '#d3d3d3'
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                color: '#d3d3d3'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createSecondChart(servers, penetrationCounts) {
+            if (mySecondChart !== null) {
+                mySecondChart.destroy();
+            }
+
+            const secondCtx = document.getElementById('mySecondChart').getContext('2d');
+
+            let newLabel = servers.slice(1).reverse().map(num => -num).concat(servers);
+
+            mySecondChart = new Chart(secondCtx, {
+                type: 'bar',
+                data: {
+                    labels: newLabel,
+                    datasets: [{
+                        label: "Numero di attaccanti per livello",
+                        backgroundColor: '#045185',
+                        data: penetrationCounts,
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        tooltip: {
+                            enabled: false,
+                        },
+                        legend: {
+                            display: false,
+                            labels: {
+                                color: '#045185'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: true,
+                                color: '#d3d3d3'
+                            },
+                            ticks: {
+                                color: '#d3d3d3'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            reverse: true,
+                            grid: {
+                                display: true,
+                                color: '#d3d3d3'
+                            },
+                            ticks: {
+                                color: '#d3d3d3',
+                                callback: function (value) {
+                                    return '';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createIntermediateChart(servers, intermediateSuccessfulJumps) {
+            if (myIntermediateChart !== null) {
+                myIntermediateChart.destroy();  // Distruggi il grafico precedente
+            }
+
+            const intermediateCtx = document.getElementById('myIntermediateChart').getContext('2d');
+            myIntermediateChart = new Chart(intermediateCtx, {
+                type: 'bar',
+                data: {
+                    labels: servers,
+                    datasets: [{
+                        label: "Successi intermedi",
+                        backgroundColor: '#045185',
+                        data: intermediateSuccessfulJumps,
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        tooltip: {
+                            enabled: false,
+                        },
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#045185'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                display: true,
+                                color: '#d3d3d3'
+                            },
+                            ticks: {
+                                color: '#d3d3d3'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                display: true,
+                                color: '#d3d3d3'
+                            },
+                            ticks: {
+                                color: '#d3d3d3'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+
+
+        function createFourthChart(servers, successfulJumps, relativeSuccessfulJumps) {
+            if (myFourthChart !== null) {
+                myFourthChart.destroy();
+            }
+
+            const fourthCtx = document.getElementById('myFourthChart').getContext('2d');
+            myFourthChart = new Chart(fourthCtx, {
+                type: 'line',
+                data: {
+                    labels: servers,
+                    datasets: [{
+                        label: 'Absolute Frequency',
+                        data: successfulJumps,
+                        borderColor: 'rgba(255, 0, 0)',
+                        borderWidth: 1,
+                        pointRadius: 1,
+                        tension: 0.4,
+                    },
+                    {
+                        label: 'Relative Frequency',
+                        data: relativeSuccessfulJumps,
+                        borderColor: 'rgba(0, 0, 255)',
+                        borderWidth: 1,
+                        pointRadius: 1,
+                        tension: 0.4,
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#045185'
+                            }
+                        },
+                        tooltip: {
+                            enabled: false,
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                color: '#d3d3d3'
+                            },
+                            ticks: {
+                                color: '#d3d3d3'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                color: '#d3d3d3'
+                            },
+                            ticks: {
+                                color: '#d3d3d3'
+                            }
+                        },
+                    }
+                }
+            });
+        }
+
+        function generateDataset(attackers, servers, probability, intermediateStep) {
+            let serverLen = servers.length;
+            let dataset = [];
+            let totalSuccessfulJumps = Array(serverLen).fill(0);
+            let intermediateSuccessfulJumps = Array(serverLen).fill(0); // Salti intermedi
+
+            for (let i = 1; i <= attackers.length; i++) {
+                let attackerData = [];
+                attackerData.push(0); // Partenza da 0
+                let max = 0;
+
+                for (let j = 1; j < serverLen; j++) {
+                    let randomValue = Math.random();
+
+                    if (randomValue < probability) {
+                        max++;
+                        totalSuccessfulJumps[j] += 1;
+                        if (j <= intermediateStep) {
+                            intermediateSuccessfulJumps[j] += 1; // Conta per lo step intermedio
+                        }
+                    } else {
+                        max--;
+                    }
+
+                    attackerData.push(max);
+                }
+
+                function getRandomColor(opacity = 1) {
+                    const r = Math.floor(Math.random() * 256);
+                    const g = Math.floor(Math.random() * 256);
+                    const b = Math.floor(Math.random() * 256);
+                    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+                }
+
+                dataset.push({
+                    data: attackerData,
+                    borderColor: getRandomColor(),
+                    borderWidth: 3,
+                    pointRadius: 1,
+                    fill: false,
+                    tension: 0.4,
+                });
+            }
+
+            // Media e varianza finale
+            let meanFinal = calculateMean(totalSuccessfulJumps);
+            let varianceFinal = calculateVariance(totalSuccessfulJumps, meanFinal);
+
+            // Media e varianza intermedia
+            let meanIntermediate = calculateMean(intermediateSuccessfulJumps);
+            let varianceIntermediate = calculateVariance(intermediateSuccessfulJumps, meanIntermediate);
+
+            let relativeJumps = calculateRelativeFrequency(totalSuccessfulJumps, attackers.length);
+
+            return {
+                dataset: dataset,
+                totalSuccessfulJumps: totalSuccessfulJumps,
+                relativeSuccessfulJumps: relativeJumps,
+                meanFinal: meanFinal,
+                varianceFinal: varianceFinal,
+                meanIntermediate: meanIntermediate,
+                varianceIntermediate: varianceIntermediate,
+                intermediateSuccessfulJumps: intermediateSuccessfulJumps
+            };
+        }
+
+        function calculateMean(jumps) {
+            let sum = jumps.reduce((acc, val) => acc + val, 0);
+            return (sum / jumps.length);
+        }
+
+        function calculateVariance(jumps, mean) {
+            let sum = jumps.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0);
+            return (sum / jumps.length);
+        }
+
+        function calculateRelativeFrequency(jumps, attackersCount) {
+            return jumps.map(jump => (jump / attackersCount));
+        }
+
+        document.getElementById('valuesForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const integer1 = parseInt(document.getElementById('integer1').value);
+            const integer2 = parseInt(document.getElementById('integer2').value);
+            const decimal = parseFloat(document.getElementById('decimal').value);
+            const integer3 = parseInt(document.getElementById('integer3').value);
+
+            let servers = Array.from({ length: integer1 + 1 }, (_, i) => i);
+            let attackers = Array.from({ length: integer2 }, (_, i) => i + 1);
+
+            let {
+                dataset,
+                totalSuccessfulJumps,
+                relativeSuccessfulJumps,
+                meanFinal,
+                varianceFinal,
+                meanIntermediate,
+                varianceIntermediate,
+                intermediateSuccessfulJumps,
+            } = generateDataset(attackers, servers, decimal, integer3);
+
+            createChart(servers, dataset);
+            createSecondChart(servers, totalSuccessfulJumps);
+           
+            createFourthChart(servers, totalSuccessfulJumps, relativeSuccessfulJumps);
+            createIntermediateChart(servers, intermediateSuccessfulJumps);
+
+            console.log("ciao");
+            console.log("Array intermediateSuccessfulJumps:", intermediateSuccessfulJumps);
+
+
+            // Risultati nel div
+            document.getElementById('resultMean').textContent = `Mean Final: ${meanFinal.toFixed(2)}, Mean Intermediate: ${meanIntermediate.toFixed(2)}`;
+            document.getElementById('resultVariance').textContent = `Variance Final: ${varianceFinal.toFixed(2)}, Variance Intermediate: ${varianceIntermediate.toFixed(2)}`;
+        });
+    </script>
+
+</body>
+
+</html>

@@ -287,7 +287,7 @@
             ctxHist.lineWidth = 0.5; // Thin grid lines
 
             // Add X-axis numbers
-            for (let i = 0; i < levelCounts.length; i += 10) {
+            for (let i = 0; i < levelCounts.length; i += 100) {
                 const x = 50 + i * barWidth + (barWidth - 2) / 2; // Center the number below the bar
                 ctxHist.fillText(i, x, histogramCanvas.height - 30); // Adjust vertical position as needed
             }

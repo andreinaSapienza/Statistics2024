@@ -150,7 +150,7 @@
             }
 
             ctx.fillStyle = '#045185';
-            ctx.font = '16px Poppins';
+            ctx.font = '10px Poppins';
             ctx.fillText('Number of Servers', canvasWidth / 2 - 30, canvasHeight - 10);
             ctx.save();
             ctx.translate(10, canvasHeight / 2);
@@ -167,9 +167,12 @@
             ctx.lineTo(50, canvasHeight - 50);
             ctx.stroke();
 
-            for (let i = 0; i <= 10; i++) {
-                const x = 50 + (i * (canvasWidth - 100) / 10); // 10 posizioni sull'asse X
-                ctx.fillText(Math.round(i * (n / 10)), x - 5, canvasHeight - 30);
+            for (let i = 0; i <= 20; i++) {
+                const x = 50 + (i * (canvasWidth - 100) / 20); // 10 posizioni sull'asse X
+                const lambdaDivServers = (lambda / n) * i; // Divide l'intervallo in base a lambda e numServers
+
+                // Mostra il valore calcolato arrotondato
+                ctx.fillText(lambdaDivServers.toFixed(2), x - 5, canvasHeight - 30); // Mostra i numeri sull'asse X
             }
 
             for (let i = 0; i <= 10; i++) {
@@ -271,7 +274,7 @@
 
             // Add labels
             ctxHist.fillStyle = '#045185';
-            ctxHist.font = '16px Poppins';
+            ctxHist.font = '10px Poppins';
             ctxHist.fillText('Number of Servers Hacked', histogramCanvas.width / 2 - 100, histogramCanvas.height - 10);
             ctxHist.fillText('Number of Hackers', 10, 20); // Y-axis label
 

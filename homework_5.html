@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linear Regression Simulation</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      text-align: center;
+      font-family: 'Poppins', sans-serif;
+      background-color: #ffffff;
+      /* Cambiato il background in un bianco uniforme */
+      color: #045185;
+      /* Dark text color */
+    }
+
+    canvas {
+      border: 1px solid #045185;
+      /* Blue border for the canvas */
+      display: block;
+      margin: 20px auto;
+      background-color: #ffffff;
+      /* White background for the canvas */
+      width: 1000px;
+      /* Aumentato leggermente la larghezza del canvas */
+      height: 600px;
+      /* Altezza fissa per il canvas */
+    }
+
+    form {
+      margin-bottom: 20px;
+      display: block;
+      width: 100%;
+    }
+
+    /* Stile per le etichette del modulo */
+    label {
+      margin: 0 10px 0 0;
+      /* Spazio ridotto a destra delle etichette */
+      display: inline-block;
+      /* Consente di controllare il posizionamento */
+      width: 200px;
+      /* Larghezza fissa per le etichette */
+      text-align: right;
+      /* Allinea il testo a destra */
+    }
+
+    /* Aumentato lo spazio verticale tra le etichette */
+    label+label {
+      margin-top: 15px;
+      /* Maggiore distanza tra le etichette */
+    }
+
+    /* Stile per gli input */
+    input[type="number"] {
+      border: 2px solid #045185;
+      /* Bordo blu per i campi di input */
+      border-radius: 20px;
+      /* Maggiore raggio per un aspetto stondato */
+      padding: 8px;
+      /* Spaziatura interna */
+      margin: 0 10px;
+      /* Spazio attorno agli input */
+      width: 50px;
+      /* Larghezza fissa per i campi di input */
+    }
+
+    h1 {
+      margin-bottom: 10px;
+      color: #045185;
+      /* Title color */
+
+      font-size: 36px;
+      /* Aumenta la dimensione del font, ad esempio a 36px */
+      font-weight: bold
+    }
+
+    #result {
+      font-size: 18px;
+      color: #045185;
+      margin-top: 20px;
+    }
+
+    /* Nuovo stile per il pulsante */
+    .button-28 {
+      appearance: none;
+      background-color: transparent;
+      border: 2px solid #045185;
+      border-radius: 15px;
+      box-sizing: border-box;
+      color: #045185;
+      cursor: pointer;
+      display: inline-block;
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      line-height: normal;
+      margin: 0;
+      min-height: 40px;
+      min-width: 0;
+      outline: none;
+      padding: 16px 24px;
+      text-align: center;
+      text-decoration: none;
+      transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      width: 20%;
+      will-change: transform;
+    }
+
+    .button-28:disabled {
+      pointer-events: none;
+    }
+
+    .button-28:hover {
+      color: #fff;
+      background-color: #3182b8;
+      transform: translateY(-2px);
+    }
+
+    .button-28:active {
+      box-shadow: none;
+      transform: translateY(0);
+    }
+  </style>
+
+</head>
+
+<body>
+  <h1>Linear Regression</h1>
+  <form id="points-form">
+    <label for="numPoints">Number of points:</label>
+    <input type="number" id="numPoints" value="100" min="50" max="1000"><br><br>
+    <button class="button-28" role="button">Start Simulation</button>
+  </form>
+
+  <div id="chart-container">
+
+    <canvas id="myChart" width="1000" height="600"></canvas>
+
+  </div>
+
+  <!-- Codice JavaScript direttamente qui -->
+  <script>
+    let myChart; // Variabile globale per il grafico
+
+    document.getElementById('points-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      // Ottieni il numero di punti dal form
+      const numPoints = parseInt(document.getElementById('numPoints').value, 10);
+
+      // Genera punti casuali
+      const { xValues, yValues } = generaPuntiCasuali(numPoints);
+
+      // Calcola la regressione lineare
+      const { m, b } = calcolaRegressioneLineare(xValues, yValues);
+
+      // Crea i punti della retta di regressione
+      const regLineY = xValues.map(x => m * x + b);
+
+      // Ottieni il contesto del grafico
+      const ctx = document.getElementById('myChart').getContext('2d');
+
+      // Distruggi il grafico esistente (se c'è)
+      if (myChart) {
+        myChart.destroy();
+      }
+
+      // Crea il nuovo grafico
+      myChart = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: '# Points',
+              data: xValues.map((x, index) => ({ x, y: yValues[index] })),
+              backgroundColor: 'rgba(0, 0, 139, 1)', // Colore dei punti
+              borderColor: 'rgba(0, 0, 139, 1)',     // Colore del bordo dei punti
+              borderWidth: 0.5
+            },
+            {
+              label: 'Regression Line',
+              data: xValues.map((x, index) => ({ x, y: regLineY[index] })),
+              type: 'line',
+              borderColor: 'rgba(255, 0, 0, 1)', // Colore della retta di regressione
+              borderWidth: 1,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          scales: {
+            x: {
+              beginAtZero: true,
+              type: 'linear',
+              position: 'bottom',
+              ticks: {
+                color: '#045185'  // Colore dei numeri sull'asse X
+              }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: '#045185'  // Colore dei numeri sull'asse X
+              }
+            }
+          }
+        }
+      });
+    });
+
+    // Funzione che calcola la regressione lineare
+    function calcolaRegressioneLineare(x, y) {
+      const n = x.length;
+      const sumX = x.reduce((sum, xi) => sum + xi, 0);
+      const sumY = y.reduce((sum, yi) => sum + yi, 0);
+      const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+      const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+
+      const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+      const b = (sumY - m * sumX) / n;
+
+      return { m, b };
+    }
+
+    // Funzione che genera punti casuali per il grafico
+    function generaPuntiCasuali(numPoints) {
+      const xValues = [];
+      const yValues = [];
+      // Genera i punti casuali in un range
+      for (let i = 0; i < numPoints; i++) {
+        const x = Math.random() * 100; // Random X tra 0 e 100
+        const y = 2 * x + 10 + (Math.random() * 20 - 10); // Formula y = 2x + 10 + disturbo casuale
+        xValues.push(x);
+        yValues.push(y);
+      }
+
+      return { xValues, yValues };
+    }
+  </script>
+</body>
+
+</html>

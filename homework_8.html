@@ -1,0 +1,383 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Homework #7</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            color: #045185;
+        }
+
+        canvas {
+            border: 1px solid #045185;
+            display: block;
+            margin: 20px auto;
+            background-color: #ffffff;
+            width: 1000px;
+            height: 600px;
+        }
+
+        form {
+            margin-bottom: 20px;
+            display: block;
+            width: 100%;
+        }
+
+        label {
+            margin: 0 10px 0 0;
+            display: inline-block;
+            width: 200px;
+            text-align: right;
+        }
+
+        label+label {
+            margin-top: 15px;
+        }
+
+        input[type="number"] {
+            border: 1px solid #045185;
+            border-radius: 20px;
+            padding: 6px;
+            margin: 5 10px;
+            width: 60px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #045185;
+            font-size: 40px;
+            font-weight: bold
+        }
+
+        #results {
+            display: flex;
+            flex-direction: column;
+            /* Disporre i div uno sotto l'altro */
+            align-items: center;
+            /* Allineare al centro */
+        }
+
+        .results-column {
+            font-size: 18px;
+            color: #045185;
+            padding: 10px;
+            width: 90%;
+            /* Adattato per occupare la maggior parte della larghezza */
+            /* Distanza tra le colonne */
+        }
+
+        h2 {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .button-28 {
+            appearance: none;
+            background-color: transparent;
+            border: 2px solid #045185;
+            border-radius: 15px;
+            box-sizing: border-box;
+            color: #045185;
+            cursor: pointer;
+            display: inline-block;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: normal;
+            margin: 0;
+            min-height: 40px;
+            min-width: 0;
+            outline: none;
+            padding: 16px 24px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            width: 20%;
+            will-change: transform;
+        }
+
+        .button-28:disabled {
+            pointer-events: none;
+        }
+
+        .button-28:hover {
+            color: #fff;
+            background-color: #3182b8;
+            transform: translateY(-2px);
+        }
+
+        .button-28:active {
+            box-shadow: none;
+            transform: translateY(0);
+        }
+
+        #theoryResults,
+        #calculatedResults {
+            text-align: center;
+        }
+    </style>
+</head>
+
+
+<body>
+    <h1>Simulazione di Campionamento e Distribuzione delle Medie</h1>
+
+    <label for="numIntervals">Number of intervals:</label>
+    <input type="number" id="numIntervals" value="20" min="1" onchange="createIntervalInputs()">
+
+    <label for="numPoints">Number of points:</label>
+    <input type="number" id="numPoints" value="1000" min="1">
+
+
+    <label for="numSimulations">Number of simulations (m):</label>
+    <input type="number" id="numSimulations" value="10" min="1">
+    </br>
+    </br>
+
+    <div id="intervalInputs"></div>
+
+    <button class="button-28" role="button" onclick="generateRandomProbabilities()">Generate Random
+        Probabilities</button>
+    <button class="button-28" role="button" onclick="runSimulations()">Start Simulations</button>
+
+    <canvas id="graphCanvas" width="1000" height="600" style="border:0.5px solid #045185;"></canvas>
+
+    <div id="results">
+        <div class="results-column" id="theoryResults">
+            <h2>Theoretical Results</h2>
+            <p id="theoryMean">Theoretical Mean: </p>
+            <p id="theoryVariance">Theoretical Variance: </p>
+        </div>
+        <div class="results-column" id="calculatedResults">
+            <h2>Calculated Results</h2>
+            <p id="calculatedMean">Calculated Mean: </p>
+            <p id="calculatedVariance">Calculated Variance: </p>
+            <h3>Simulations Mean Array</h3>
+            <ul id="simulationsMeanArray"></ul> <!-- Cambiato a lista non ordinata -->
+            <h3>Simulations Variance Array</h3>
+            <ul id="simulationsVarianceArray"></ul> <!-- Cambiato a lista non ordinata -->
+        </div>
+
+    </div>
+
+    <script>
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const margin = 60;
+        let baseY = canvas.height - margin - 100;
+
+        // Funzione per generare probabilità casuali normalizzate
+        function createRandomProbabilities(numIntervals) {
+            let probabilities = Array(numIntervals).fill(0).map(() => Math.random());
+            const sum = probabilities.reduce((a, b) => a + b, 0);
+            return probabilities.map(p => p / sum);  // Normalizza per avere somma pari a 1
+        }
+
+        // Crea gli input per le probabilità
+        function createIntervalInputs() {
+            const numIntervals = parseInt(document.getElementById('numIntervals').value);
+            const intervalInputs = document.getElementById('intervalInputs');
+            intervalInputs.innerHTML = '';
+
+            const probabilities = createRandomProbabilities(numIntervals);
+
+            for (let i = 0; i < numIntervals; i++) {
+                const label = document.createElement('label');
+                label.innerHTML = `Probability C<sub>${i + 1}</sub>: `;
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = `P${i}`;
+                input.value = probabilities[i].toFixed(4);
+                input.step = "0.01";
+                input.min = "0";
+                input.max = "1";
+                intervalInputs.appendChild(label);
+                intervalInputs.appendChild(input);
+
+                if ((i + 1) % 5 === 0) {
+                    intervalInputs.appendChild(document.createElement('br'));
+                    intervalInputs.appendChild(document.createElement('br'));
+                }
+            }
+        }
+
+        // Funzione per disegnare la griglia con incremento di 50
+        function drawGrid(maxCount) {
+            const width = canvas.width;
+            const height = canvas.height;
+            const yInterval = 50;
+            const xInterval = (width - 2 * margin) / 10;
+
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 1;
+
+            const numYIntervals = Math.ceil(maxCount / yInterval);
+
+            for (let i = 0; i <= numYIntervals; i++) {
+                const y = baseY - i * (height - 2 * margin - 100) / numYIntervals;
+                ctx.beginPath();
+                ctx.moveTo(margin, y);
+                ctx.lineTo(width - margin, y);
+                ctx.stroke();
+            }
+
+            for (let i = 1; i <= 10; i++) {
+                const x = margin + i * xInterval;
+                ctx.beginPath();
+                ctx.moveTo(x, margin);
+                ctx.lineTo(x, height - margin - 100);
+                ctx.stroke();
+            }
+        }
+
+        // Funzione per disegnare gli assi
+        function drawAxes(maxCount) {
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.strokeStyle = '#045185';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(margin, baseY);
+            ctx.lineTo(width - margin, baseY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(margin, margin);
+            ctx.lineTo(margin, baseY);
+            ctx.stroke();
+
+            ctx.save();
+            ctx.translate(20, height / 2 - 50);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Events', 0, 25);
+            ctx.restore();
+
+            drawGrid(maxCount);
+        }
+
+        // Funzione per disegnare l'istogramma
+        function drawHistogram(counts) {
+            const width = canvas.width - 2 * margin;
+            const height = canvas.height - 2 * margin - 100;
+            const maxCount = Math.max(...counts);
+
+            ctx.fillStyle = '#045185';
+            const barWidth = width / counts.length;
+
+            for (let i = 0; i < counts.length; i++) {
+                const barHeight = (counts[i] / maxCount) * height;
+                const x = margin + i * barWidth;
+                const y = baseY - barHeight;
+
+                ctx.fillRect(x, y, barWidth - 5, barHeight);
+
+                ctx.fillStyle = '#045185';
+                ctx.font = '20px sans-serif';
+                ctx.fillText(`c`, x + barWidth / 2 - 10, baseY + 20);
+                ctx.font = '10px sans-serif';
+                ctx.fillText(`${i + 1}`, x + barWidth / 2, baseY + 20);
+                ctx.font = '16px sans-serif';
+                ctx.fillText(counts[i], x + barWidth / 2 - 10, y - 10);
+            }
+        }
+
+        // Funzione per eseguire la simulazione per più esperimenti
+        // Funzione per eseguire la simulazione per più esperimenti
+        function runSimulations() {
+            const numIntervals = parseInt(document.getElementById('numIntervals').value);
+            const numPoints = parseInt(document.getElementById('numPoints').value);
+            const numSimulations = parseInt(document.getElementById('numSimulations').value);
+
+            const probabilities = [];
+            for (let i = 0; i < numIntervals; i++) {
+                probabilities.push(parseFloat(document.getElementById(`P${i}`).value));
+            }
+
+            const simulationMeans = [];
+            const simulationVariances = [];
+
+            // Esegui m simulazioni
+            for (let sim = 0; sim < numSimulations; sim++) {
+                const counts = Array(numIntervals).fill(0);
+                let mean = 0;
+                let M2 = 0;  // Variance computation using Welford's method
+
+                for (let i = 0; i < numPoints; i++) {
+                    const rand = Math.random();
+                    let sum = 0;
+                    for (let j = 0; j < numIntervals; j++) {
+                        sum += probabilities[j];
+                        if (rand <= sum) {
+                            counts[j]++;
+                            const delta = j - mean;
+                            mean += delta / (i + 1);  // Update mean using Welford's method
+                            M2 += delta * (j - mean); // Update variance using Welford's method
+                            break;
+                        }
+                    }
+                }
+
+                const variance = M2 / (numPoints - 1); // Variance formula for sample variance
+
+                // Aggiungi la media e la varianza della simulazione agli array
+                simulationMeans.push(mean.toFixed(3));  // Limita a 3 decimali
+                simulationVariances.push(variance.toFixed(3));  // Limita a 3 decimali
+
+                // Calcolo della media teorica
+                const theoryMean = probabilities.reduce((sum, prob, index) => sum + (index * prob), 0);
+                const theoryVariance = probabilities.reduce((sum, prob, index) => sum + (prob * Math.pow(index - theoryMean, 2)), 0);
+
+                // Visualizza i risultati teorici
+                document.getElementById('theoryMean').textContent = `Theoretical Mean: ${theoryMean.toFixed(3)}`;
+                document.getElementById('theoryVariance').textContent = `Theoretical Variance: ${theoryVariance.toFixed(3)}`;
+
+                // Disegna gli assi e l'istogramma
+                drawAxes(Math.max(...counts));
+                drawHistogram(counts);
+            }
+
+            // Mostra l'array delle medie delle simulazioni con scroll
+            document.getElementById('simulationsMeanArray').textContent = JSON.stringify(simulationMeans);
+
+            // Mostra l'array delle varianze delle simulazioni con scroll
+            document.getElementById('simulationsVarianceArray').textContent = JSON.stringify(simulationVariances);
+
+            // Calcola e mostra la media e la varianza delle medie
+            const avgSimMean = simulationMeans.reduce((a, b) => parseFloat(a) + parseFloat(b), 0) / simulationMeans.length;
+            const varianceSimMean = simulationMeans.reduce((a, b) => a + Math.pow(b - avgSimMean, 2), 0) / (simulationMeans.length - 1);
+            const avgSimVariance = simulationVariances.reduce((a, b) => parseFloat(a) + parseFloat(b), 0) / simulationVariances.length;
+
+            document.getElementById('calculatedMean').textContent = `Average of Simulation Means: ${avgSimMean.toFixed(3)}`;
+            document.getElementById('calculatedVariance').textContent = `Average of Simulation Variances: ${avgSimVariance.toFixed(3)}`;
+        }
+
+
+        // Funzione per generare nuovi valori di probabilità randomici
+        function generateRandomProbabilities() {
+            const numIntervals = parseInt(document.getElementById('numIntervals').value);
+            const probabilities = createRandomProbabilities(numIntervals);
+
+            for (let i = 0; i < numIntervals; i++) {
+                document.getElementById(`P${i}`).value = probabilities[i].toFixed(4);
+            }
+        }
+
+        // Inizializza gli input
+        createIntervalInputs();
+    </script>
+</body>
+
+</html>

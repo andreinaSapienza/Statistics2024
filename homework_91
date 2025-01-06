@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation of Random Subsets</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            color: #045185;
+        }
+
+        canvas {
+            border: 1px solid #045185;
+            display: block;
+            margin: 20px auto;
+            background-color: #ffffff;
+            width: 820px;
+            height: 600px;
+        }
+
+        form {
+            margin-bottom: 20px;
+            display: block;
+            width: 100%;
+        }
+
+        label {
+            margin: 0 10px 0 0;
+            display: inline-block;
+            width: 200px;
+            text-align: right;
+        }
+        .input-group {
+            margin-bottom: 20px; /* Spazio tra gli input */
+        }
+
+        label+label {
+            margin-top: 15px;
+        }
+
+        input[type="number"] {
+            border: 2px solid #045185;
+            border-radius: 20px;
+            padding: 8px;
+            margin: 0 10px;
+            width: 50px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #045185;
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        #result {
+            font-size: 18px;
+            color: #045185;
+            margin-top: 20px;
+        }
+
+
+        .button-28 {
+            appearance: none;
+            background-color: transparent;
+            border: 2px solid #045185;
+            border-radius: 15px;
+            color: #045185;
+            cursor: pointer;
+            display: inline-block;
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: normal;
+            min-height: 40px;
+            padding: 16px 24px;
+            text-align: center;
+            transition: all 300ms cubic-bezier(.23, 1, 0.32, 1);
+            width: 20%;
+        }
+
+        .button-28:hover {
+            color: #fff;
+            background-color: #3182b8;
+        }
+
+        .button-28:active {
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simulation of Random Subsets</h1>
+
+    <div class="input-group">
+        <label for="m">Number of Subsets (m):</label>
+        <input type="number" id="m" min="1" value="5">
+    </div>
+    <div class="input-group">
+        <label for="n">Number of Samples per Subset (n):</label>
+        <input type="number" id="n" min="1" value="100">
+        <br>
+    </div>
+    <div class="input-group">
+        <label for="intervals">Number of Intervals:</label>
+        <input type="number" id="intervals" min="1" max="10" value="7">
+    </div>
+    <div>
+        <button class="button-28" onclick="simulate()">Run Simulation</button>
+    </div>
+
+    <canvas id="chartCanvas"></canvas>
+
+    <div class="results">
+        <p><strong>Mean of Means:</strong> <span id="meanOfMeans" style="color: #045185;"></span></p>
+        <p><strong>Variance of Means:</strong> <span id="varianceOfMeans"></span></p>
+
+        <h2>Empirical Statistics</h2>
+        <ul id="empiricalStats" style="text-align: center;"></ul>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1"></script>
+    <script>
+        let chart;
+
+        function simulate() {
+            const m = parseInt(document.getElementById('m').value);  // Number of subsets
+            const n = parseInt(document.getElementById('n').value);  // Number of samples per subset
+
+            const subsetMeans = [];
+            const subsetVariances = [];
+            let empiricalMeans = [];
+            let empiricalVariances = [];
+
+            // Generate data
+            for (let i = 0; i < m; i++) {
+                const subset = [];
+                for (let j = 0; j < n; j++) {
+                    subset.push(Math.random());  // Uniform random samples between 0 and 1
+                }
+
+                // Calculate mean and variance for the subset
+                const mean = subset.reduce((sum, x) => sum + x, 0) / n;
+                const variance = subset.reduce((sum, x) => sum + Math.pow(x - mean, 2), 0) / (n - 1);
+
+                // Store the mean and variance of each subset
+                subsetMeans.push(mean);
+                subsetVariances.push(variance);
+
+                empiricalMeans.push(mean);
+                empiricalVariances.push(variance);
+            }
+
+            // Calculate mean of means
+            const meanOfMeans = subsetMeans.reduce((sum, mean) => sum + mean, 0) / m;
+
+            // Calculate variance of means
+            const varianceOfMeans = subsetMeans.reduce((sum, mean) => sum + Math.pow(mean - meanOfMeans, 2), 0) / m;
+
+            document.getElementById('meanOfMeans').textContent = meanOfMeans.toFixed(4);
+            document.getElementById('varianceOfMeans').textContent = varianceOfMeans.toFixed(4);
+
+            // Show empirical statistics
+            let empiricalStatsText = '';
+            for (let i = 0; i < m; i++) {
+                empiricalStatsText += `
+                    <li>Subset ${i + 1}: Mean: ${empiricalMeans[i].toFixed(4)}, Variance: ${empiricalVariances[i].toFixed(4)}</li>
+                `;
+            }
+            document.getElementById('empiricalStats').innerHTML = empiricalStatsText;
+
+            // Destroy the existing chart if it exists
+            if (chart) {
+                chart.destroy();
+            }
+
+            // Limit number of subsets displayed in the chart
+            const maxVisibleSubsets = 20;
+            const labels = Array.from({ length: m }, (_, i) => `Subset ${i + 1}`).slice(0, maxVisibleSubsets);
+            const displayedMeans = subsetMeans.slice(0, maxVisibleSubsets);
+            const displayedVariances = subsetVariances.slice(0, maxVisibleSubsets);
+
+            // Display the chart
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Variance of Subsets',
+                            data: displayedVariances,
+                            backgroundColor: 'rgba(82, 78, 183, 1)',
+                            borderColor: 'rgba(48, 225, 98, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Mean of Subsets',
+                            data: displayedMeans,
+                            backgroundColor: 'rgba(50, 50, 120, 1)',
+                            borderColor: 'rgba(60, 120, 100, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true, // Ensures canvas stays fixed
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
